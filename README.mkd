@@ -4,8 +4,7 @@ mdforvim
 ## Supercool reproducion of parent branch:
 
 
-![screenshot](https://raw.githubusercontent.com/sentientmachine/mdforvim/mdforvim_screenshot.png)
-
+![Screenshot](./mdforvim_screenshot.png?raw=true "screenshot")
 
 
 ## Overview
