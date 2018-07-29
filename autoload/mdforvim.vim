@@ -1,10 +1,10 @@
 " ==================================================
-"                _  __                  _           
-"  _ __ ___   __| |/ _| ___  _ ____   _(_)_ __ ___  
-" | '_ ` _ \ / _` | |_ / _ \| '__\ \ / / | '_ ` _ \ 
+"                _  __                  _
+"  _ __ ___   __| |/ _| ___  _ ____   _(_)_ __ ___
+" | '_ ` _ \ / _` | |_ / _ \| '__\ \ / / | '_ ` _ \
 " | | | | | | (_| |  _| (_) | |   \ V /| | | | | | |
 " |_| |_| |_|\__,_|_|  \___/|_|    \_/ |_|_| |_| |_|
-" 
+"
 " Last Change: 2015 Oct. 22
 " Maintainer: Kuro_CODE25 <kuro.code25@gmail.com>
 "
@@ -69,7 +69,7 @@ function! mdforvim#preview() " {{{
     call add(l:text_list,'var text = '''.l:text.''';')
     call add(l:text_list,'var bodyTag = document.getElementById("body");')
     call add(l:text_list,'bodyTag.innerHTML = text;')
-" encode utf-8 for output.html 
+" encode utf-8 for output.html
     let l:k = 0
     while l:k < len(l:text_list)
         let l:text_list[l:k] = iconv(l:text_list[l:k],&encoding,"utf-8")
@@ -188,6 +188,7 @@ fun! s:Convert_markdown() " {{{
     " echo len(s:line_list)
     let s:i = 0
     while s:i < len(s:line_list)
+        call s:Convert_literalhtml(s:i)
         call s:Convert_autolink(s:i)
         call s:Convert_header(s:i)
         call s:Convert_horizon(s:i)
@@ -195,7 +196,7 @@ fun! s:Convert_markdown() " {{{
         call s:Convert_code(s:i)
         call s:Convert_image(s:i)
         call s:Convert_URL(s:i)
-        call s:Convert_list(s:i)
+        "call s:Convert_list(s:i)
         call s:Convert_blockquote(s:i)
         call s:Convert_CR(s:i)
 "       " echo 's:i'.s:i
@@ -217,6 +218,7 @@ fun! s:Convert_markdown_preview() " {{{
     " echo len(s:line_list)
     let s:i = 0
     while s:i < len(s:line_list)
+        call s:Convert_literalhtml(s:i)
         call s:Convert_autolink(s:i)
         call s:Convert_header(s:i)
         call s:Convert_horizon(s:i)
@@ -224,7 +226,7 @@ fun! s:Convert_markdown_preview() " {{{
         call s:Convert_code(s:i)
         call s:Convert_image_preview(s:i)
         call s:Convert_URL(s:i)
-        call s:Convert_list(s:i)
+        "call s:Convert_list(s:i)
         call s:Convert_blockquote(s:i)
         call s:Convert_CR(s:i)
 "       " echo 's:i'.s:i
@@ -233,6 +235,16 @@ fun! s:Convert_markdown_preview() " {{{
     call s:Convert_paragraph()
     call s:Convert_char()
 endfun " }}}
+" Convert header
+function! s:Convert_literalhtml(i) "{{{
+    if match(s:line_list[a:i],"<") != -1
+        let s:line_list[a:i] = substitute(s:line_list[a:i],"<","\\&lt;","g")
+    endif
+    if match(s:line_list[a:i],">") != -1
+        let s:line_list[a:i] = substitute(s:line_list[a:i],">","\\&gt;","g")
+    endif
+endfunction
+" }}}
 " Convert header
 function! s:Convert_header(i) "{{{
     if match(s:line_list[a:i],"###### ") == 0 && match(s:line_list[a:i],"!###### ") < 0
@@ -837,7 +849,7 @@ endfunction " }}}
 "     autocmd TextChangedI * call mdforvim#autowrite()
 "     autocmd TextChanged * call mdforvim#autowrite()
 " augroup END
-" 
+"
 " if !exists(":MdCovert")
 "     command! MdConvert call mdforvim#convert()
 " endif
