@@ -191,7 +191,7 @@ fun! s:Convert_markdown() " {{{
         call s:Convert_autolink(s:i)
         call s:Convert_header(s:i)
         call s:Convert_horizon(s:i)
-        call s:Convert_enphasis(s:i)
+        call s:Convert_emphasis(s:i)
         call s:Convert_code(s:i)
         call s:Convert_image(s:i)
         call s:Convert_URL(s:i)
@@ -220,7 +220,7 @@ fun! s:Convert_markdown_preview() " {{{
         call s:Convert_autolink(s:i)
         call s:Convert_header(s:i)
         call s:Convert_horizon(s:i)
-        call s:Convert_enphasis(s:i)
+        call s:Convert_emphasis(s:i)
         call s:Convert_code(s:i)
         call s:Convert_image_preview(s:i)
         call s:Convert_URL(s:i)
@@ -266,7 +266,7 @@ fun! s:Convert_horizon(i) " {{{
 endfun " }}}
 "...>>>>....>>>>....>>>>....>>>>....>>>>....>>>>....>>>>....>>>>....
 " Convert enphasis.
-function! s:Convert_enphasis(i) " {{{
+function! s:Convert_emphasis(i) " {{{
 " Convert <strong>: {
     if match(s:line_list[a:i],'\*\*') >= 0
         let l:linelist = split(s:line_list[a:i],'\*\*\zs')
@@ -352,34 +352,34 @@ function! s:Convert_enphasis(i) " {{{
         endwhile
         let s:line_list[a:i] = join(l:linelist,'')
     endif
-    if match(s:line_list[a:i],'_') >= 0
-        let l:linelist = split(s:line_list[a:i],'_\zs')
-        " **の数を数える
-        let a:k = 0
-        let l:count_target = s:countlist(l:linelist,'_') - s:countlist(l:linelist,'\_')
-        if l:count_target % 2 != 0
-            let a:counter = l:count_target - 1
-        else
-            let a:counter = len(l:linelist)
-        endif
-        let l:toggle_init = 0
-
-        while a:k < len(l:linelist)
-            if stridx(l:linelist[a:k],'\_') < 0 && a:counter > 0
-                if l:toggle_init == 0
-                    let l:linelist[a:k] = substitute(l:linelist[a:k],'_',"<em>","g")
-                    let a:counter -= 1
-                    let l:toggle_init = 1
-                else
-                    let l:linelist[a:k] = substitute(l:linelist[a:k],'_',"</em>","g")
-                    let a:counter -= 1
-                    let l:toggle_init = 0
-                endif
-            endif
-            let a:k += 1
-        endwhile
-        let s:line_list[a:i] = join(l:linelist,'')
-    endif
+    "if match(s:line_list[a:i],'_') >= 0
+    "    let l:linelist = split(s:line_list[a:i],'_\zs')
+    "    " **の数を数える
+    "    let a:k = 0
+    "    let l:count_target = s:countlist(l:linelist,'_') - s:countlist(l:linelist,'\_')
+    "    if l:count_target % 2 != 0
+    "        let a:counter = l:count_target - 1
+    "    else
+    "        let a:counter = len(l:linelist)
+    "    endif
+    "    let l:toggle_init = 0
+    "
+    "    while a:k < len(l:linelist)
+    "        if stridx(l:linelist[a:k],'\_') < 0 && a:counter > 0
+    "            if l:toggle_init == 0
+    "                let l:linelist[a:k] = substitute(l:linelist[a:k],'_',"<em>","g")
+    "                let a:counter -= 1
+    "                let l:toggle_init = 1
+    "            else
+    "                let l:linelist[a:k] = substitute(l:linelist[a:k],'_',"</em>","g")
+    "                let a:counter -= 1
+    "                let l:toggle_init = 0
+    "            endif
+    "        endif
+    "        let a:k += 1
+    "    endwhile
+    "    let s:line_list[a:i] = join(l:linelist,'')
+    "endif
 " Convert <em>: }
 " Convert <del>: {
     if match(s:line_list[a:i],'\~\~') >= 0
