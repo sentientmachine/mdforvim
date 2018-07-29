@@ -52,9 +52,15 @@ endfunction " }}}
 " Start preview.
 function! mdforvim#preview() " {{{
     call s:Convert_markdown_preview()
-    let l:text = join(s:line_list,'')
-    let l:text = substitute(l:text,"'",'"','g')
+    "Woah this stuff could be really cool for my angeliqe blog.  sweet stuff
+    "Don't put the newline here because it screws with code formatting like pre and backtick
+    let l:text = join(s:line_list,'\n')
+    "let l:text = substitute(l:text,"'","\\\\x27",'g')
+    let l:text = substitute(l:text,"'","\\\\\'",'g')
+
+
     let l:text = substitute(l:text,'"','\\"','g')
+    let l:text = substitute(l:text,'<code>\\n','<code>','g')
     call s:define_path()
     let l:settext_path = s:base_path.s:path_to_mdpreview.'settext.js'
     let l:prevfile_path = s:base_path.s:path_to_mdpreview.'preview.html'
@@ -77,9 +83,14 @@ endfunction " }}}
 function! mdforvim#autowrite() "{{{
     if s:toggle_autowrite == 1
         call s:Convert_markdown_preview()
-        let l:text = join(s:line_list,'')
-        let l:text = substitute(l:text,"'",'"','g')
+        let l:text = join(s:line_list,'\n')
+
+        "let l:text = substitute(l:text,"'","\\\\x27",'g')
+        let l:text = substitute(l:text,"'","\\\\\'",'g')
+
         let l:text = substitute(l:text,'"','\\"','g')
+        let l:text = substitute(l:text,'<code>\\n','<code>','g')
+
         call s:define_path()
         let l:settext_path = s:base_path.s:path_to_mdpreview.'settext.js'
         let l:text_list = []
@@ -101,7 +112,10 @@ endfunction "}}}
 function! mdforvim#stop_preview() " {{{
     let s:toggle_autowrite = 0
     let l:text_list = []
-    let l:settext_path = s:base_path.s:path_to_mdpreview.'settext.js'
+    try
+        let l:settext_path = s:base_path.s:path_to_mdpreview.'settext.js'
+    catch
+    endtry
     let l:text = '<h3>Please close this page.</h3>'
     call add(l:text_list,'var text = '''.l:text.''';')
     call add(l:text_list,'var bodyTag = document.getElementById("body");')
@@ -112,7 +126,11 @@ function! mdforvim#stop_preview() " {{{
             let l:text_list[l:k] = iconv(l:text_list[l:k],&encoding,"utf-8")
             let l:k += 1
         endwhile
-    call writefile(l:text_list,l:settext_path)
+    try
+        call writefile(l:text_list,l:settext_path)
+    catch
+    endtry
+
 endfunction " }}}
 
 " Open a file.
@@ -228,7 +246,7 @@ function! s:Convert_header(i) "{{{
     elseif match(s:line_list[a:i],"## ") == 0
         let s:line_list[a:i] = substitute(s:line_list[a:i],"## ","<h2>","g") ."</h2>"
     elseif match(s:line_list[a:i],"# ") == 0
-        let s:line_list[a:i] = substitute(s:line_list[a:i],"# ","<h1>","g") ."</h1>"
+        let s:line_list[a:i] = substitute(s:line_list[a:i],"#","<h1>","g") ."</h1>"
     endif
     if stridx(s:line_list[a:i],'===') >= 0 && stridx(s:line_list[a:i],'\=') < 0
         let s:line_list[a:i] = ''
