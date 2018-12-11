@@ -17,32 +17,32 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-
-let s:base_path = expand('<sfile>:p:h')
-let s:file_name = 'output.html'
-let s:is_unix = has('unix')
-let s:is_windows = has('win16') || has('win32') || has('win64') || has('win95')
-let s:is_cygwin = has('win32unix')
-let s:is_mac = !s:is_windows && !s:is_cygwin
-      \ && (has('mac') || has('macunix') || has('gui_macvim') ||
-      \   (!isdirectory('/proc') && executable('sw_vers')))
-" As of 7.4.122, the system()'s 1st argument is converted internally by Vim.
-" Note that Patch 7.4.122 does not convert system()'s 2nd argument and
-" return-value. We must convert them manually.
-let s:need_trans = v:version < 704 || (v:version == 704 && !has('patch122'))
-let s:toggle_autowrite = 0
-
-" Convert current buffer.
-function! mdforvim#convert() " {{{
-    call s:Convert_markdown()
-    " echo s:line_list
-    let s:i = 0
-    while s:i < len(s:line_list)
-        call setline(s:i,s:line_list[s:i])
-        let s:i += 1
-    endwhile
-endfunction " }}}
-
+                                                                                                                               
+let s:base_path = expand('<sfile>:p:h')                                                                                        
+let s:file_name = 'output.html'                                                                                                
+let s:is_unix = has('unix')                                                                                                    
+let s:is_windows = has('win16') || has('win32') || has('win64') || has('win95')                                                
+let s:is_cygwin = has('win32unix')                                                                                             
+let s:is_mac = !s:is_windows && !s:is_cygwin                                                                                   
+      \ && (has('mac') || has('macunix') || has('gui_macvim') ||                                                               
+      \   (!isdirectory('/proc') && executable('sw_vers')))                                                                    
+" As of 7.4.122, the system()'s 1st argument is converted internally by Vim.                                                   
+" Note that Patch 7.4.122 does not convert system()'s 2nd argument and                                                         
+" return-value. We must convert them manually.                                                                                 
+let s:need_trans = v:version < 704 || (v:version == 704 && !has('patch122'))                                                   
+let s:toggle_autowrite = 0                                                                                                     
+                                                                                                                               
+" Convert current buffer.                                                                                                      
+function! mdforvim#convert() " {{{                                                                                             
+    call s:Convert_markdown()                                                                                                  
+    " echo s:line_list                                                                                                         
+    let s:i = 0                                                                                                                
+    while s:i < len(s:line_list)                                                                                               
+        call setline(s:i,s:line_list[s:i])                                                                                     
+        let s:i += 1                                                                                                           
+    endwhile                                                                                                                   
+endfunction " }}}                                                                                                              
+                                                                                                                               
 " Save as html file
 function! mdforvim#save_html(filename) " {{{
     call s:Convert_markdown()
@@ -194,6 +194,7 @@ fun! s:Convert_markdown() " {{{
         call s:Convert_horizon(s:i)
         call s:Convert_emphasis(s:i)
         call s:Convert_code(s:i)
+        call s:Convert_indented_code(s:i)
         call s:Convert_image(s:i)
         call s:Convert_URL(s:i)
         "call s:Convert_list(s:i)
@@ -224,6 +225,7 @@ fun! s:Convert_markdown_preview() " {{{
         call s:Convert_horizon(s:i)
         call s:Convert_emphasis(s:i)
         call s:Convert_code(s:i)
+        call s:Convert_indented_code(s:i)
         call s:Convert_image_preview(s:i)
         call s:Convert_URL(s:i)
         "call s:Convert_list(s:i)
@@ -425,9 +427,38 @@ function! s:Convert_emphasis(i) " {{{
 " Convert <del>: }
 endfunction " }}}
 
-"...>>>>....>>>>....>>>>....>>>>....>>>>....>>>>....>>>>....>>>>....
+
 " Convert code.
-function! s:Convert_code(i) " {{{
+"
+" ERIC KNOWS WHAT HE IS FUCKING DOING. 
+" REFROMULATE THE DILITHIUM CRYSTALS
+"
+function! s:Convert_indented_code(i)
+    "If the line starts with at least four spaces:
+    if match(s:line_list[a:i],'^\s\s\s\s') >= 0
+        "then stick an xmp tag before the line
+        
+        let s:line_list[a:i] = '<xmp>' . substitute(s:line_list[a:i], '^\s\s\s\s', '', 'g')
+
+        "increment the line and on next line check if at least 4 spaces
+        let l:k = 1
+        while match(s:line_list[a:i + l:k], '^\s\s\s\s') != -1
+            "if so just relay the line
+            let s:line_list[a:i + l:k] = substitute(s:line_list[a:i + l:k], '^\s\s\s\s', '', 'g')
+            if s:i + l:k == len(s:line_list) - 1
+                let l:k = 0
+                break
+            endif
+            let l:k += 1
+        endwhile
+        "when there are no longer four spaces, end the tag:
+        let s:line_list[s:i + l:k] = '</xmp>'
+
+        let s:i += l:k
+    endif
+endfunction
+" Convert code.
+function! s:Convert_code(i)
     if stridx(s:line_list[a:i],'```') >= 0
         let s:line_list[a:i] = '<pre><code>'
         let l:k = 1
@@ -765,7 +796,9 @@ fun! s:Convert_paragraph() " {{{
         call s:skip_block('<ol','</ol>')
         call s:skip_block('<div','</div>')
         if s:line_list[s:j] != '' && stridx(s:line_list[s:j],'<h') < 0  && stridx(s:line_list[s:j],'<blockquote>') < 0 && stridx(s:line_list[s:j],'</blockquote>') < 0 && stridx(s:line_list[s:j],'<ul>') < 0
+
             let s:line_list[s:j] = '<p>'.s:line_list[s:j]
+
             let a:k = 0
             while s:line_list[s:j + a:k] != ''
                 if s:j + a:k == len(s:line_list) - 1
@@ -777,7 +810,9 @@ fun! s:Convert_paragraph() " {{{
                 endif
                 let a:k  += 1
             endwhile
+            
             let a:end_paragraph = s:line_list[s:j + a:k -1].'</p>'
+
             let s:line_list[s:j + a:k -1] = a:end_paragraph
             let s:j = s:j + a:k
         endif
