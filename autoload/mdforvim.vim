@@ -17,32 +17,32 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-                                                                                                                               
-let s:base_path = expand('<sfile>:p:h')                                                                                        
-let s:file_name = 'output.html'                                                                                                
-let s:is_unix = has('unix')                                                                                                    
-let s:is_windows = has('win16') || has('win32') || has('win64') || has('win95')                                                
-let s:is_cygwin = has('win32unix')                                                                                             
-let s:is_mac = !s:is_windows && !s:is_cygwin                                                                                   
-      \ && (has('mac') || has('macunix') || has('gui_macvim') ||                                                               
-      \   (!isdirectory('/proc') && executable('sw_vers')))                                                                    
-" As of 7.4.122, the system()'s 1st argument is converted internally by Vim.                                                   
-" Note that Patch 7.4.122 does not convert system()'s 2nd argument and                                                         
-" return-value. We must convert them manually.                                                                                 
-let s:need_trans = v:version < 704 || (v:version == 704 && !has('patch122'))                                                   
-let s:toggle_autowrite = 0                                                                                                     
-                                                                                                                               
-" Convert current buffer.                                                                                                      
-function! mdforvim#convert() " {{{                                                                                             
-    call s:Convert_markdown()                                                                                                  
-    " echo s:line_list                                                                                                         
-    let s:i = 0                                                                                                                
-    while s:i < len(s:line_list)                                                                                               
-        call setline(s:i,s:line_list[s:i])                                                                                     
-        let s:i += 1                                                                                                           
-    endwhile                                                                                                                   
-endfunction " }}}                                                                                                              
-                                                                                                                               
+
+let s:base_path = expand('<sfile>:p:h')
+let s:file_name = 'output.html'
+let s:is_unix = has('unix')
+let s:is_windows = has('win16') || has('win32') || has('win64') || has('win95')
+let s:is_cygwin = has('win32unix')
+let s:is_mac = !s:is_windows && !s:is_cygwin
+      \ && (has('mac') || has('macunix') || has('gui_macvim') ||
+      \   (!isdirectory('/proc') && executable('sw_vers')))
+" As of 7.4.122, the system()'s 1st argument is converted internally by Vim.
+" Note that Patch 7.4.122 does not convert system()'s 2nd argument and
+" return-value. We must convert them manually.
+let s:need_trans = v:version < 704 || (v:version == 704 && !has('patch122'))
+let s:toggle_autowrite = 0
+
+" Convert current buffer.
+function! mdforvim#convert() " {{{
+    call s:Convert_markdown()
+    " echo s:line_list
+    let s:i = 0
+    while s:i < len(s:line_list)
+        call setline(s:i,s:line_list[s:i])
+        let s:i += 1
+    endwhile
+endfunction " }}}
+
 " Save as html file
 function! mdforvim#save_html(filename) " {{{
     call s:Convert_markdown()
@@ -50,8 +50,63 @@ function! mdforvim#save_html(filename) " {{{
 endfunction " }}}
 
 " Start preview.
-function! mdforvim#preview() " {{{
-    call s:Convert_markdown_preview()
+function! mdforvim#previewGithub() " {{{
+    call s:Convert_markdown_preview_github()
+    "Woah this stuff could be really cool for my angeliqe blog.  sweet stuff
+    "Don't put the newline here because it screws with code formatting like pre and backtick
+    
+    let l:text = join(s:line_list,'\n')
+    "let l:text = substitute(l:text,"'","\\\\x27",'g')
+    let l:text = substitute(l:text,"'","\\\\\'",'g')
+
+
+    let l:text = substitute(l:text,'"','\\"','g')
+    let l:text = substitute(l:text,'<code>\\n','<code>','g')
+    call s:define_path()
+
+    let l:settext_path = s:base_path.s:path_to_mdpreview.'settext.js'
+    let l:prevfile_path = s:base_path.s:path_to_mdpreview.'preview.html'
+    let l:text_list = []
+    let s:toggle_autowrite = 1
+    "call add(l:text_list,'var text = '''.l:text.''';')
+    "call add(l:text_list,'var bodyTag = document.getElementById("body");')
+    "call add(l:text_list,'bodyTag.innerHTML = text;')
+
+
+    "text is the new stuff, uncleaned
+    call add(l:text_list,'var text = '''.l:text.''';')
+
+    "oldtext is the previous, cleaned
+    call add(l:text_list,'var bodyTag = document.getElementById("body");')
+
+    call add(l:text_list,'var oldtext = bodyTag.innerHTML;')
+
+    call add(l:text_list,'bodyTag.innerHTML = text;')
+    call add(l:text_list,'var newtext = bodyTag.innerHTML;')
+
+    call add(l:text_list,'if (new String(oldtext).valueOf() !== new String(newtext).valueOf()){')
+
+    "call add(l:text_list,'    alert("strings arent the same, refreshing");')
+    call add(l:text_list,'    bodyTag.innerHTML = text;')
+    "call add(l:text_list,'    alert("oldtext: " + oldtext.length);')
+    "call add(l:text_list,'    alert("newtext: " + newtext.length);')
+    call add(l:text_list,'}')
+
+" encode utf-8 for output.html
+    let l:k = 0
+    while l:k < len(l:text_list)
+        let l:text_list[l:k] = iconv(l:text_list[l:k],&encoding,"utf-8")
+        let l:k += 1
+    endwhile
+    call writefile(l:text_list,l:settext_path)
+    call s:open(l:prevfile_path)
+endfunction " }}}
+
+
+
+" Start preview.
+function! mdforvim#previewBitbucket() " {{{
+    call s:Convert_markdown_preview_bitbucket()
     "Woah this stuff could be really cool for my angeliqe blog.  sweet stuff
     "Don't put the newline here because it screws with code formatting like pre and backtick
     let l:text = join(s:line_list,'\n')
@@ -79,10 +134,10 @@ function! mdforvim#preview() " {{{
     call s:open(l:prevfile_path)
 endfunction " }}}
 
-" Automatic write output.html.
-function! mdforvim#autowrite() "{{{
+" Automatic write output.html Bitbucket
+function! mdforvim#autowrite_bitbucket()
     if s:toggle_autowrite == 1
-        call s:Convert_markdown_preview()
+        call s:Convert_markdown_preview_bitbucket()
         let l:text = join(s:line_list,'\n')
 
         "let l:text = substitute(l:text,"'","\\\\x27",'g')
@@ -106,7 +161,62 @@ function! mdforvim#autowrite() "{{{
         endwhile
         call writefile(l:text_list,l:settext_path)
     endif
-endfunction "}}}
+endfunction
+
+
+" Automatic write output.html Github
+function! mdforvim#autowrite_github()
+    if s:toggle_autowrite == 1
+        call s:Convert_markdown_preview_github()
+        let l:text = join(s:line_list,'\n')
+
+        "let l:text = substitute(l:text,"'","\\\\x27",'g')
+        let l:text = substitute(l:text,"'","\\\\\'",'g')
+
+        let l:text = substitute(l:text,'"','\\"','g')
+        let l:text = substitute(l:text,'<code>\\n','<code>','g')
+
+        call s:define_path()
+        let l:settext_path = s:base_path.s:path_to_mdpreview.'settext.js'
+        let l:text_list = []
+        let s:toggle_autowrite = 1
+
+        "call add(l:text_list,'var text = '''.l:text.''';')
+        "call add(l:text_list,'var bodyTag = document.getElementById("body");')
+        "call add(l:text_list,'bodyTag.innerHTML = text;')
+       
+
+        "yuck this is in two places.
+        "text is the new stuff, uncleaned
+        call add(l:text_list,'var text = '''.l:text.''';')
+
+        "oldtext is the previous, cleaned
+        call add(l:text_list,'var bodyTag = document.getElementById("body");')
+
+        call add(l:text_list,'var oldtext = bodyTag.innerHTML;')
+
+        call add(l:text_list,'bodyTag.innerHTML = text;')
+        call add(l:text_list,'var newtext = bodyTag.innerHTML;')
+
+        call add(l:text_list,'if (new String(oldtext).valueOf() !== new String(newtext).valueOf()){')
+
+        "call add(l:text_list,'    alert("strings arent the same, refreshing");')
+        call add(l:text_list,'    bodyTag.innerHTML = text;')
+        "call add(l:text_list,'    alert("oldtext: " + oldtext.length);')
+        "call add(l:text_list,'    alert("newtext: " + newtext.length);')
+        call add(l:text_list,'}')
+
+        " encode utf-8 for output.html {
+        let l:k = 0
+        while l:k < len(l:text_list)
+            let l:text_list[l:k] = iconv(l:text_list[l:k],&encoding,"utf-8")
+            let l:k += 1
+        endwhile
+        call writefile(l:text_list,l:settext_path)
+    endif
+endfunction
+
+
 
 " Stop preview.
 function! mdforvim#stop_preview() " {{{
@@ -139,17 +249,20 @@ function! s:open(filename) "{{{
 
     " Detect desktop environment.
     if s:is_windows
-    " For URI only.
-    if s:need_trans
-        let filename = iconv(filename, &encoding, 'char')
-    endif
-    silent execute '!start rundll32 url.dll,FileProtocolHandler' filename
+        " For URI only.
+        if s:need_trans
+            let filename = iconv(filename, &encoding, 'char')
+        endif
+        silent execute '!start rundll32 url.dll,FileProtocolHandler' filename
     elseif s:is_cygwin
     " Cygwin.
         call system(printf('%s %s', 'cygstart', shellescape(filename)))
     elseif executable('xdg-open')
-    " Unix.
-        call system(printf('%s %s &', 'xdg-open', shellescape(filename)))
+        " Unix (This is the first correct hit for gentoo:
+        "call system(printf('%s %s &', 'xdg-open', shellescape(filename)))
+        call system(printf('%s %s &', 'google-chrome-stable', 
+            \ shellescape(filename)))
+
     elseif exists('$KDE_FULL_SESSION') && $KDE_FULL_SESSION ==# 'true'
     " KDE.
         call system(printf('%s %s &', 'kioclient exec', shellescape(filename)))
@@ -169,11 +282,7 @@ function! s:open(filename) "{{{
 endfunction "}}}
 
 function! s:define_path() " {{{
-    if s:is_windows
-        let s:path_to_mdpreview = '\..\mdpreview\'
-    else
-        let s:path_to_mdpreview = '/../mdpreview/'
-    endif
+    let s:path_to_mdpreview = '/../mdpreview/'
 endfunction " }}}
 
 fun! s:Convert_markdown() " {{{
@@ -206,8 +315,10 @@ fun! s:Convert_markdown() " {{{
     call s:Convert_paragraph()
     call s:Convert_char()
 endfun " }}}
-" Convert Markdown for preview.
-fun! s:Convert_markdown_preview() " {{{
+" Convert Markdown for preview Bitbucket
+
+fun! s:Convert_markdown_preview_bitbucket()
+    "Github evaluates naked HTML and renders the intent, but Bitbucket will render all html tags literally
     let s:line_list =['']
     let s:i = 0
     let s:num_of_line = line("$")
@@ -219,7 +330,10 @@ fun! s:Convert_markdown_preview() " {{{
     " echo len(s:line_list)
     let s:i = 0
     while s:i < len(s:line_list)
+        
+        "bitbucket renders html as literal greater than less than tags
         call s:Convert_literalhtml(s:i)
+
         call s:Convert_autolink(s:i)
         call s:Convert_header(s:i)
         call s:Convert_horizon(s:i)
@@ -236,7 +350,45 @@ fun! s:Convert_markdown_preview() " {{{
     endwhile
     call s:Convert_paragraph()
     call s:Convert_char()
-endfun " }}}
+endfun 
+
+fun! s:Convert_markdown_preview_github()
+    "Github evaluates naked HTML and renders the intent, but Bitbucket will render all html tags literally
+
+    let s:line_list =['']
+    let s:i = 0
+    let s:num_of_line = line("$")
+
+    " echo s:num_of_line
+    for s:i in range(1,s:num_of_line)
+        call add(s:line_list,getline(s:i))
+    endfor
+    call add(s:line_list,'')
+    " echo len(s:line_list)
+    let s:i = 0
+    while s:i < len(s:line_list)
+        
+        "bitbucket renders html as literal greater than less than tags
+        "call s:Convert_literalhtml(s:i)
+        call s:Convert_autolink(s:i)
+        call s:Convert_header(s:i)
+        call s:Convert_horizon(s:i)
+        call s:Convert_emphasis(s:i)
+        call s:Convert_code(s:i)
+        call s:Convert_indented_code(s:i)
+        call s:Convert_image_preview(s:i)
+        call s:Convert_URL(s:i)
+        "call s:Convert_list(s:i)
+        call s:Convert_blockquote(s:i)
+        call s:Convert_CR(s:i)
+"       " echo 's:i'.s:i
+        let s:i += 1
+    endwhile
+    call s:Convert_paragraph()
+    call s:Convert_char()
+endfun
+
+
 " Convert header
 function! s:Convert_literalhtml(i) "{{{
     if match(s:line_list[a:i],"<") != -1
@@ -549,6 +701,7 @@ endfunction " }}}
 
 "...>>>>....>>>>....>>>>....>>>>....>>>>....>>>>....>>>>....>>>>....
 " Convert image.
+"
 fun! s:Convert_image(i) " {{{
     if stridx(s:line_list[a:i],'![') >= 0 && stridx(s:line_list[a:i],'](')
         let l:line = s:line_list[a:i]
@@ -617,7 +770,18 @@ fun! s:Convert_image_preview(i) " {{{
                 " echo "url_url:".l:url
                 " echo "url_title:".l:title
 
-                let l:url_list[l:k] = '<img src="'.l:current_path.'/'.l:url.'" alt="'.l:word.'" title="'.l:title.'">'
+
+                "if l:url starts with http
+
+                "BZZZT: if the thing is a url, you don't put that after a path, what the heck
+                "Yuck, unless it's an http to the self, kick the can
+                if l:url =~ '^\s*http'
+                    "if it starts with http, treat it like a url:
+                    let l:url_list[l:k] = '<img src="'.l:url.'" alt="'.l:word.'" title="'.l:title.'">'
+                else
+                    "otherwise treat it like it's on local disk, on github it'll be there, ideally
+                    let l:url_list[l:k] = '<img src="'.l:current_path.'/'.l:url.'" alt="'.l:word.'" title="'.l:title.'">'
+                endif
             endif
 
             let l:k += 1
@@ -878,7 +1042,8 @@ fun! s:Cutstrpart(str,start,end) " {{{
     return strpart(a:str,l:num_start,l:num_end)
 endfunction " }}}
 
-" ---plugin/mdforvim.vim---
+"GOTO: plugin/mdforvim.vim
+"
 " augroup write_text
 "     autocmd!
 "     autocmd TextChangedI * call mdforvim#autowrite()
