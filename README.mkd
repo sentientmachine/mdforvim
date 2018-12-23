@@ -3,8 +3,49 @@ mdforvim
 
 ## Supercool reproducion of parent branch:
 
-
 ![Screenshot](./mdforvim_screenshot.png?raw=true "screenshot")
+
+## vim settings to set markdown ideology to bitbucket or github, and to print to html or pdf
+
+    function Markdown_ideology() 
+        if (g:markdown_ideology == "markdown_bitbucket_chrome") 
+            au BufWinEnter,FileType *.md set filetype=markdown_bitbucket 
+            au BufWinEnter,FileType *.md colorscheme mmarkdown_bitbucket 
+            au FileType markdown_bitbucket :nnoremap ,m :w<cr>:MdStopPreview<cr>:MdPreviewBitbucket<cr> 
+        elseif (g:markdown_ideology == "markdown_github_chrome") 
+            au BufWinEnter,FileType *.md set filetype=markdown_github 
+            au BufWinEnter,FileType *.md colorscheme mmarkdown_github 
+            au FileType markdown_github :nnoremap ,m :w<cr>:MdStopPreview<cr>:MdPreviewGithub<cr> 
+        elseif (g:markdown_ideology == "markdown_github_pdf") 
+            au BufWinEnter,FileType *.md set filetype=markdown_github 
+            au BufWinEnter,FileType *.md colorscheme mmarkdown_github 
+            function ConvertHtmlToPdfRosewill() 
+                execute "!/home/el/.vim/mdpreview/convert_html_to_pdf.sh" 
+                "Above evince is a blocking operation, when you're done, restart the preview 
+                "execute "normal! :MdStopPreview" 
+                execute "normal! :MdPreviewGithub" 
+            endfunction 
+            au FileType markdown_github :nnoremap ,m :w<cr>:MdStopPreview<cr>:MdPreviewGithub<cr>:call ConvertHtmlToPdfRosewill()<cr>:MdStopPreview<cr>:MdPreviewGithub<cr> 
+        else 
+            echo "fail you must have a markdown ideology" 
+            return 
+        endif 
+
+        "These stay the same, enumerated for each markdown ideology, for vim matchadds 
+        au FileType markdown_bitbucket nnoremap <c-l> :redraw!<cr>:call clearmatches()<cr>:set ft=markdown_bitbucket<cr> 
+        au FileType markdown_bitbucket nnoremap <leader>l :call clearmatches()<cr>:set ft=markdown_bitbucket<cr> 
+        au FileType markdown_github nnoremap <c-l> :redraw!<cr>:call clearmatches()<cr>:set ft=markdown_github<cr> 
+        au FileType markdown_github nnoremap <leader>l :call clearmatches()<cr>:set ft=markdown_github<cr> 
+
+    endfunction 
+
+
+    "CHANGETHIS: This line tells the mdforvim previewer which markdown ideology to use: 
+    let g:markdown_ideology = "markdown_github_pdf" 
+
+    "let g:markdown_ideology = "markdown_bitbucket" 
+    call Markdown_ideology() 
+
 
 
 ## Overview
@@ -15,12 +56,6 @@ mdforvim
 2. saving as HTML file without change original Markdown file
 3. showing live preview by WEB browser during edit Markdown file
 
-## Demo
-### Showing Live Preview
-![demo01](https://raw.githubusercontent.com/kurocode25/storeroom/master/mdforvim/demo01.gif)
-
-### Conversion Markdown in current buffer
-![demo02](https://raw.githubusercontent.com/kurocode25/storeroom/master/mdforvim/demo02.gif)
 
 ## Usage
 ### Instant conversion in current buffer
